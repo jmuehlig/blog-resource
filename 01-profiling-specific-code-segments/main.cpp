@@ -72,7 +72,7 @@ int main(int count_arguments, char **arguments) {
     for (const auto index: access_pattern_indices) {
         sum += cache_lines[index].value;
     }
-    asm volatile("" : "+r,m"(sum) : : "memory");
+    asm volatile("" : : "r,m"(sum) : "memory");
 
     if (is_count_events) {
         /// Stop recording counters and get the result (normalized to the number of accessed cache lines).
