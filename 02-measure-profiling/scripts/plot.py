@@ -3,6 +3,7 @@ import re
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 parser = argparse.ArgumentParser()
@@ -79,18 +80,19 @@ def make_plot(is_random, metric, ylabel, measure_types, filename, baseline=None,
     kb_values = sorted(subset["kb"].unique())
     x = np.arange(len(kb_values))
     n = len(measure_types)
-    width = 0.32
+    width = 0.42
     label_fn = x_label_fn if x_label_fn is not None else kb_label
     x_labels = [label_fn(kb) for kb in kb_values]
 
     fig, ax = plt.subplots(figsize=(16, 7))
+    ax.set_yscale("log")
 
     for i, mtype in enumerate(measure_types):
         rows = subset[subset["measure_type"] == mtype]
         values = []
         for kb in kb_values:
             row = rows[rows["kb"] == kb]
-            values.append(row[metric].values[0] if not row.empty and not row[metric].isna().all() else 0)
+            values.append(row[metric].values[0] if not row.empty and not row[metric].isna().all() else np.nan)
 
         offset = (i - n / 2 + 0.5) * width
         ax.bar(x + offset, values, width, label=LABELS[mtype], color=COLORS[mtype], alpha=0.85)
@@ -98,16 +100,17 @@ def make_plot(is_random, metric, ylabel, measure_types, filename, baseline=None,
     if baseline is not None:
         ax.axhline(baseline, color="crimson", linewidth=1.5, linestyle="--", label=baseline_label)
 
-    ax.set_ylabel(ylabel)
+    ax.set_ylabel(f"{ylabel}\n(log scale)")
     ax.set_xlabel("Working set size")
     if title:
         ax.set_title(title, fontsize=19, fontweight="bold")
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels, rotation=45, ha="right", fontsize=15)
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(bottom=0.5)
+    ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
     ax.tick_params(axis="y", labelsize=17)
     ax.xaxis.label.set_size(16)
-    ax.yaxis.label.set_size(18)
+    ax.yaxis.label.set_size(20)
     ax.legend(fontsize=17, framealpha=0)
     ax.grid(axis="y", linestyle="--", alpha=0.4)
     ax.set_axisbelow(True)
@@ -125,7 +128,7 @@ for is_random, name in access_types:
     make_plot(
         is_random=is_random,
         metric="cycles_per_cache_line",
-        ylabel="measured cycles / iteration",
+        ylabel="measured cycles / iter",
         measure_types=MEASURE_TYPES_CYCLES,
         filename=f"plots/{prefix}{name}_cycles.svg",
         title=f"cycles – {machine_name}",
@@ -133,7 +136,7 @@ for is_random, name in access_types:
     make_plot(
         is_random=is_random,
         metric="instructions_per_cache_line",
-        ylabel="measured instructions / iteration",
+        ylabel="measured instructions / iter",
         measure_types=MEASURE_TYPES_INSTRUCTIONS,
         filename=f"plots/{prefix}{name}_instructions.svg",
         baseline=ASSEMBLY_BASELINE,
@@ -143,7 +146,7 @@ for is_random, name in access_types:
     make_plot(
         is_random=is_random,
         metric="L1-dcache-loads_per_cache_line",
-        ylabel="measured L1-dcache-loads / iteration",
+        ylabel="measured L1-dcache-loads / iter",
         measure_types=MEASURE_TYPES_INSTRUCTIONS,
         filename=f"plots/{prefix}{name}_l1_dcache_loads.svg",
         baseline=L1D_BASELINE,
@@ -154,7 +157,7 @@ for is_random, name in access_types:
     make_plot(
         is_random=is_random,
         metric="branches_per_cache_line",
-        ylabel="measured branches / iteration",
+        ylabel="measured branches / iter",
         measure_types=MEASURE_TYPES_INSTRUCTIONS,
         filename=f"plots/{prefix}{name}_branches.svg",
         baseline=BRANCHES_BASELINE,

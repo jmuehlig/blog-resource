@@ -2,6 +2,7 @@ import re
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 MACHINE_NAMES = {
@@ -68,28 +69,30 @@ for csv_path, (key, name) in zip(args.csvs, machines):
 
 n_groups = len(machines)
 n_bars = len(measure_types)
-width = 0.32
+width = 0.22
 group_spacing = n_bars * width + 0.3
 x = np.arange(n_groups) * group_spacing
 
 fig, ax = plt.subplots(figsize=(16, 7))
+ax.set_yscale("log")
 
 for i, mtype in enumerate(measure_types):
     values = []
     for key in machine_keys:
         df = data[key]
         row = df[df["measure_type"] == mtype]
-        values.append(row[metric_col].values[0] if not row.empty and not row[metric_col].isna().all() else 0)
+        values.append(row[metric_col].values[0] if not row.empty and not row[metric_col].isna().all() else np.nan)
     offset = (i - n_bars / 2 + 0.5) * width
     ax.bar(x + offset, values, width, label=LABELS[mtype], color=COLORS[mtype], alpha=0.85)
 
 title = f"{args.metric} @ {kb_label(args.kb)} – {' vs '.join(machine_names)}"
 ax.set_title(title, fontsize=19, fontweight="bold")
-ax.set_ylabel(f"measured {args.metric} / iteration", fontsize=18)
-ax.set_xlabel("Architecture", fontsize=16)
+ax.set_ylabel(f"measured {args.metric} / iter\n(log scale)", fontsize=20)
+ax.set_xlabel("", fontsize=16)
 ax.set_xticks(x)
 ax.set_xticklabels(machine_names, fontsize=16)
-ax.set_ylim(bottom=0)
+ax.set_ylim(bottom=0.5)
+ax.yaxis.set_major_formatter(ticker.ScalarFormatter())
 ax.tick_params(axis="y", labelsize=17)
 ax.legend(fontsize=17, framealpha=0)
 ax.grid(axis="y", linestyle="--", alpha=0.4)
